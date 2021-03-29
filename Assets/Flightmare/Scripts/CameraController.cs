@@ -53,7 +53,7 @@ namespace RPGFlightmare
     [HideInInspector]
     public const string client_ip_pref_key = "client_ip";
     [HideInInspector]
-    public const int connection_timeout_seconds = 5;
+    public int connection_timeout_seconds = 25;
     [HideInInspector]
     public string rpg_dsim_version = "";
 
@@ -134,6 +134,8 @@ namespace RPGFlightmare
         }
         // Check if the program should use CLI arguments for IP.
         // obstacle_perturbation_file = GetArg("-obstacle-perturbation-file", "");
+        // Check if the program should use CLI arguments for timeout.
+        connection_timeout_seconds = Int32.Parse(GetArg("-dc-timeout", "25"));
         // Disable fullscreen.
         Screen.fullScreen = false;
         Screen.SetResolution(1024, 768, false);
@@ -248,9 +250,11 @@ namespace RPGFlightmare
     */
     void Update()
     {
+      Debug.Log("test 1 " + pull_socket.HasIn.ToString() + " " + socket_initialized.ToString());
       // Debug.Log("Update: " + Time.deltaTime);
       if (pull_socket.HasIn || socket_initialized)
       {
+        Debug.Log("test 2");
         // if (splash_screen.activeSelf) splash_screen.SetActive(false);
         if (splash_screen != null && splash_screen.activeSelf)
           Destroy(splash_screen.gameObject);
@@ -261,8 +265,15 @@ namespace RPGFlightmare
         // Wait for a message from the client.
         bool received_new_packet = pull_socket.TryReceiveMultipartMessage(new TimeSpan(0, 0, connection_timeout_seconds), ref new_msg);
 
+        Debug.Log("test 2:");
+        Debug.Log(received_new_packet);
+
+        // TODO: for debugging on snaga, should probably try to see whether any messages are arriving here
+        
+        // would have to do the same as below for a new "Shutdown" message type
         if (!received_new_packet && socket_initialized)
         {
+          Debug.Log("closing sockets");
           // Close ZMQ sockets
           pull_socket.Close();
           push_socket.Close();
@@ -279,30 +290,52 @@ namespace RPGFlightmare
           return;
         }
 
+        Debug.Log("test 3");
+
         // Check if this is the latest message
         while (pull_socket.TryReceiveMultipartMessage(ref new_msg)) ;
+
+        Debug.Log("test 4");
 
         if ("Pose" == new_msg[0].ConvertToString())
         {
           // Check that we got the whole message
-          if (new_msg.FrameCount >= msg.FrameCount) { msg = new_msg; }
-          if (msg.FrameCount != 2) { return; }
-          if (msg[1].MessageSize < 10) { return; }
+          if (new_msg.FrameCount >= msg.FrameCount) { 
+            msg = new_msg; 
+            Debug.Log("new message frame count fine:");
+            Debug.Log(msg);
+          }
+          if (msg.FrameCount != 2) { 
+            Debug.Log("new message frame count != 2, instead:");
+            Debug.Log(msg.FrameCount);
+            return; 
+          }
+          if (msg[1].MessageSize < 10) { 
+            Debug.Log("new message message size < 10:");
+            Debug.Log(msg[1].MessageSize);
+            return; 
+          }
 
           if (!internal_state.readyToRender)
           {
+            // TODO: SHOULD PROBABLY ADD PRINTOUTS HERE!!
             settings = JsonConvert.DeserializeObject<SettingsMessage_t>(msg[1].ConvertToString());
+            Debug.Log("internal state not ready to render");
+            Debug.Log(settings);
             settings.InitParamsters();
             // Make sure that all objects are initialized properly
             initializeObjects(); // readyToRender set True if all objects are initialized.
             if (internal_state.readyToRender)
             {
+              Debug.Log("internal state ready to render!!");
               sendReady();
             }
+            Debug.Log("after initialising objects");
             return; // no need to worry about the rest if not ready. 
           }
           else
           {
+            Debug.Log("internal state ready to render!!!!!!! (in else)");
             pub_message = new PubMessage_t(settings);
             // after initialization, we only receive sub_message message of the vehicle. 
             sub_message = JsonConvert.DeserializeObject<SubMessage_t>(msg[1].ConvertToString());
@@ -336,8 +369,10 @@ namespace RPGFlightmare
       else
       {
         // Throttle to 10hz when idle
+        Debug.Log("idle");
         Thread.Sleep(1); // [ms]
       }
+      Debug.Log("end of update");
     }
 
     /* ==================================

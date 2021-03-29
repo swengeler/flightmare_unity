@@ -14,6 +14,7 @@ namespace RPGFlightmare
     public const string SCENE_TUNNELS = "Environments/Tunnels/Scenes/DemoSceneSimple";
     public const string SCENE_NATUREFOREST = "Environments/Forest/Scenes/DemoScene";
     public const string SCENE_INDUSTRIAL = "Environments/Industrial/Scenes/DemoScene";
+    public const string SCENE_ALPHAPILOT = "Environments/Arena/Scene/Stadium";
     //
     public List<string> scenes_list = new List<string>();
     public int default_scene_id;
@@ -21,6 +22,7 @@ namespace RPGFlightmare
     public Scenes()
     {
       scenes_list.Add(SCENE_INDUSTRIAL);
+      scenes_list.Add(SCENE_ALPHAPILOT);
       //scenes_list.Add(SCENE_WAREHOUSE);
       //scenes_list.Add(SCENE_GARAGE); 
       //scenes_list.Add(SCENE_NATUREFOREST);
@@ -67,6 +69,7 @@ namespace RPGFlightmare
       loadScene(0, true);
     }
 
+    /*
     public void loadWareHouse()
     {
       loadScene(1, true);
@@ -85,8 +88,12 @@ namespace RPGFlightmare
     {
       loadScene(4, true);
     }
+    */
 
-
+    public void loadAlphapilot()
+    {
+      loadScene(1, true);
+    }
 
   }
 }
