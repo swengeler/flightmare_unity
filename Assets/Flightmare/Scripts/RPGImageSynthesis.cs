@@ -88,7 +88,8 @@ namespace RPGFlightmare
       newCamera.farClipPlane = farClipPlane;
       //
       updateCameraFilter(newCamera, image_mode);
-      newCamera.enabled = false;
+      // newCamera.enabled = false;
+      newCamera.targetDisplay = 1;
       //
       return newCamera;
     }
@@ -150,9 +151,24 @@ namespace RPGFlightmare
       bool supportsAntialiasing = support_antialiasing[image_mode];
       bool needsRescale = needs_rescale[image_mode];
       var depth = 24;
-      var format = image_mode=="depth" ? RenderTextureFormat.RFloat : RenderTextureFormat.Default;
-      var readWrite = RenderTextureReadWrite.Default;
+      // var format = image_mode=="depth" ? RenderTextureFormat.RFloat : RenderTextureFormat.Default;
+      var format = RenderTextureFormat.Default;
+      var texture_format = TextureFormat.RGB24;
+      if (image_mode == "depth") {
+        format = RenderTextureFormat.RFloat;
+        texture_format = TextureFormat.RFloat;
+      } else if (image_mode == "optical_flow") {
+        format = RenderTextureFormat.RGFloat;
+        texture_format = TextureFormat.RGFloat;
+      }
+
+      Debug.Log("RGFloat supported: " + SystemInfo.SupportsTextureFormat(TextureFormat.RGFloat));
+
+      var readWrite = image_mode=="optical_flow" ? RenderTextureReadWrite.Linear : RenderTextureReadWrite.Default;
+      // var readWrite = RenderTextureReadWrite.Default;
       var antiAliasing = (supportsAntialiasing) ? Mathf.Max(1, QualitySettings.antiAliasing) : 1;
+
+      // Debug.Log("readWrite == Linear: " + (readWrite == RenderTextureReadWrite.Linear));
 
       // render texture for current camera
       var finalRT =
@@ -160,7 +176,8 @@ namespace RPGFlightmare
 
       var renderRT = (!needsRescale) ? finalRT :
           RenderTexture.GetTemporary(subcam.pixelWidth, subcam.pixelHeight, depth, format, readWrite, antiAliasing);
-      var tex = new Texture2D(width, height, image_mode=="depth" ? TextureFormat.RFloat : TextureFormat.RGB24, false);
+      // var tex = new Texture2D(width, height, image_mode=="depth" ? TextureFormat.RFloat : TextureFormat.RGB24, false);
+      var tex = new Texture2D(width, height, texture_format, false);
 
       var prevActiveRT = RenderTexture.active;
       var prevCameraRT = subcam.targetTexture;
